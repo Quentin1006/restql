@@ -16,6 +16,10 @@ const userCommentsResolver = (response: any, parent: any, ctx: any) => {
   return response.data;
 };
 
+const userPostFilter = (parent: any, ctx: any) => {
+  return !parent.website;
+};
+
 const restqlSchema = [
   {
     key: "personne_1",
@@ -30,6 +34,7 @@ const restqlSchema = [
       {
         key: "post_1.2",
         url: "/posts/${parent.id}",
+        only: userPostFilter,
       },
     ],
   },

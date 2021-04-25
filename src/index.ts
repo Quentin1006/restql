@@ -12,9 +12,14 @@ type RestQLTransform = {
   (originalResult: RestQLResponse, parent: any, ctx: RestQLContext): any; // Redefine any
 };
 
+type RestQLFilter = {
+  (parent: any, ctx: RestQLContext): any; // Redefine any
+};
+
 interface BaseRessource {
   key: string;
   transform?: RestQLTransform;
+  only?: RestQLFilter;
   then?: Ressource[];
 }
 
@@ -109,35 +114,37 @@ class RestQL {
     globalResult: any,
   ) {
     return Promise.all(
-      schema.map(async (ressource) => {
-        let result;
-        try {
-          console.log("Start treating Ressource:", ressource.key);
-          const ressourceAsUrl = ressource as Url;
-          const ressourceAsLink = ressource as Link;
-          const endpoint =
-            this._replacePattern(ressourceAsUrl.url, parent) ||
-            ressourceAsLink.link;
+      schema
+        .filter(({ only }) => (only ? only(parent, ctx) : true))
+        .map(async (ressource) => {
+          let result;
+          try {
+            console.log("Start treating Ressource:", ressource.key);
+            const ressourceAsUrl = ressource as Url;
+            const ressourceAsLink = ressource as Link;
+            const endpoint =
+              this._replacePattern(ressourceAsUrl.url, parent) ||
+              ressourceAsLink.link;
 
-          const originalResult = await this.transporter.get(endpoint);
+            const originalResult = await this.transporter.get(endpoint);
 
-          result = ressource.transform
-            ? ressource.transform(originalResult, parent, ctx)
-            : originalResult;
-          console.log("End treating Ressource:", ressource.key);
+            result = ressource.transform
+              ? ressource.transform(originalResult, parent, ctx)
+              : originalResult;
+            console.log("End treating Ressource:", ressource.key);
 
-          if (ressource.then) {
-            await this._runQueries(ressource.then, result, ctx, globalResult);
+            if (ressource.then) {
+              await this._runQueries(ressource.then, result, ctx, globalResult);
+            }
+          } catch (error) {
+            if (error.response) {
+              result = error.response;
+            }
           }
-        } catch (error) {
-          if (error.response) {
-            result = error.response;
-          }
-        }
-        globalResult[ressource.key] = result;
+          globalResult[ressource.key] = result;
 
-        return result;
-      }),
+          return result;
+        }),
     );
   }
 

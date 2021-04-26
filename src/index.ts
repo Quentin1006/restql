@@ -6,6 +6,7 @@ type RestQLContext = {
   instanceId: string;
   baseURL: string;
   headers: Record<string, string>;
+  transform?: RestQLTransform;
 };
 
 type RestQLTransform = {
@@ -57,6 +58,7 @@ type RestQLOptions = {
   cacheStore?: CacheStore;
   clientCtx?: Record<string, any>;
   root?: Record<string, any>;
+  transform?: RestQLTransform;
 };
 
 class RestQL {
@@ -70,6 +72,7 @@ class RestQL {
     beforeRequest,
     afterResponse,
     clientCtx,
+    transform,
     root = {},
   }: RestQLOptions) {
     this.transporter = axios.create({
@@ -82,6 +85,7 @@ class RestQL {
       instanceId: uuidv4(),
       baseURL,
       headers,
+      transform,
     };
 
     beforeRequest &&
@@ -128,8 +132,9 @@ class RestQL {
 
             const originalResult = await this.transporter.get(endpoint);
 
-            result = ressource.transform
-              ? ressource.transform(originalResult, parent, ctx)
+            const transform = ressource.transform || ctx.transform;
+            result = transform
+              ? transform(originalResult, parent, ctx)
               : originalResult;
             console.log("End treating Ressource:", ressource.key);
 

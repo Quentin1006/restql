@@ -1,10 +1,14 @@
-import { ServerResponse } from "node:http";
 import RestQL from "./index";
 
+const defaultResolver = (response: any, root: any, ctx: any) => {
+  console.log(root, ctx, "defaultResolver");
+  return response.data;
+};
 console.log("start");
 const restql = new RestQL({
   baseURL: "https://jsonplaceholder.typicode.com",
   headers: {},
+  transform: defaultResolver,
 });
 
 const userResolver = (response: any, root: any, ctx: any) => {
@@ -20,7 +24,7 @@ const userPostFilter = (parent: any, ctx: any) => {
   return !parent.website;
 };
 
-const restqlSchema = [
+const restqlSchemaBasic = [
   {
     key: "personne_1",
     url: "/users/1",
@@ -41,6 +45,42 @@ const restqlSchema = [
   {
     key: "comment_2",
     url: "/comments/3",
+    then: [
+      {
+        key: "post_2.2",
+        url: "/posts/${parent.id}",
+        only: userPostFilter,
+      },
+    ],
+  },
+];
+
+const restqlSchema = [
+  {
+    key: "personne_1",
+    url: "/users/1",
+    then: [
+      {
+        key: "comment_1.1",
+        url: "/comments/${parent.id}",
+      },
+      {
+        key: "post_1.2",
+        url: "/posts/${parent.id}",
+        only: userPostFilter,
+      },
+    ],
+  },
+  {
+    key: "comment_2",
+    url: "/comments/3",
+    then: [
+      {
+        key: "post_2.2",
+        url: "/posts/${parent.id}",
+        only: userPostFilter,
+      },
+    ],
   },
 ];
 

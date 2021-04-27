@@ -63,6 +63,12 @@ const restqlSchema = [
       {
         key: "comment_1.1",
         url: "/comments/${parent.id}",
+        then: [
+          {
+            key: "comment_1.1.1",
+            url: "/comments/${parent.id}",
+          },
+        ],
       },
       {
         key: "post_1.2",

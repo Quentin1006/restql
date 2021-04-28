@@ -24,6 +24,10 @@ const userPostFilter = (parent: any, ctx: any) => {
   return !parent.website;
 };
 
+const evenIdFilter = (id: number) => (parent: any, ctx: any) => {
+  return parseInt(parent[id].id, 10) % 2 === 0;
+};
+
 const restqlSchemaBasic = [
   {
     key: "personne_1",
@@ -57,33 +61,36 @@ const restqlSchemaBasic = [
 
 const restqlSchema = [
   {
-    key: "personne_1",
+    key: "personne",
     url: "/users/1",
     then: [
       {
-        key: "comment_1.1",
-        url: "/comments/${parent.id}",
-        then: [
-          {
-            key: "comment_1.1.1",
-            url: "/comments/${parent.id}",
-          },
-        ],
+        key: "personne_albums",
+        url: "/users/#{parent.id}/albums",
+        then: (parent: any) =>
+          parent.map((album: any, idx: number) => ({
+            key: `personne_albums_comment_${album.id}`,
+            url: `/comments/${album.id}`,
+            // Warning: The parent here is not the specific album
+            // But the array of album. This is why we need to pass the idx
+            // to retrieve the right parent in the filter function
+            only: evenIdFilter(idx),
+          })),
       },
       {
         key: "post_1.2",
-        url: "/posts/${parent.id}",
+        url: "/posts/#{parent.id}",
         only: userPostFilter,
       },
     ],
   },
   {
-    key: "comment_2",
+    key: "comment",
     url: "/comments/3",
     then: [
       {
-        key: "post_2.2",
-        url: "/posts/${parent.id}",
+        key: "comment_post",
+        url: "/posts/#{parent.id}",
         only: userPostFilter,
       },
     ],

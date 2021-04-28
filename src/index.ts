@@ -21,7 +21,7 @@ interface BaseRessource {
   key: string;
   transform?: RestQLTransform;
   only?: RestQLFilter;
-  then?: Ressource[];
+  then?: Ressource[] | ((parent: any) => Ressource[]);
 }
 
 interface Link extends BaseRessource {
@@ -139,7 +139,12 @@ class RestQL {
             console.log("End treating Ressource:", ressource.key);
 
             if (ressource.then) {
-              await this._runQueries(ressource.then, result, ctx, globalResult);
+              const then: Ressource[] =
+                typeof ressource.then === "function"
+                  ? ressource.then(result) // The result here is the parent of the then block
+                  : ressource.then;
+
+              await this._runQueries(then, result, ctx, globalResult);
             }
           } catch (error) {
             if (error.response) {
@@ -154,7 +159,7 @@ class RestQL {
   }
 
   _replacePattern<Parent = any>(pattern: string, parent: Parent): string {
-    return pattern.replace(/\${((\w|\.)+)}/g, (corresp, p1) => {
+    return pattern.replace(/#{((\w|\.)+)}/g, (corresp, p1) => {
       const keysPathAsArray = p1.split(".");
       // Remove the parent object from the keys
       keysPathAsArray.shift();

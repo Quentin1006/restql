@@ -78,7 +78,7 @@ const restqlSchema = [
           })),
       },
       {
-        key: "post_1.2",
+        key: "personne_post",
         url: "/posts/#{parent.id}",
         only: userPostFilter,
       },
